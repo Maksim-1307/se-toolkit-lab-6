@@ -2,10 +2,16 @@
 
 <h2>Table of contents</h2>
 
+- [Set up a new lab](#set-up-a-new-lab)
 - [Add the `LAB_TOKEN`](#add-the-lab_token)
 - [Get meeting transcript](#get-meeting-transcript)
 - [Get meeting report](#get-meeting-report)
 - [Enter the devshell](#enter-the-devshell)
+
+## Set up a new lab
+
+1. [Fork](../wiki/github.md#fork-a-repo) the previous lab repo.
+2. [Protect the `main` branch](../wiki/github.md#protect-a-branch).
 
 ## Add the `LAB_TOKEN`
 
