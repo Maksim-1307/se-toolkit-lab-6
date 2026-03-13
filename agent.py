@@ -48,7 +48,7 @@ def send_request(prompt):
     global LLM_TEMPERATURE
 
     response = requests.post(
-    "https://openrouter.ai/api/v1/messages",
+        f"{LLM_API_BASE}/messages",
         headers={
             "Authorization": f"Bearer {LLM_API_KEY}",
             "Content-Type": "application/json"
