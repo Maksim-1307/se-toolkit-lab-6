@@ -1,0 +1,30 @@
+[
+    {
+        "name": "list_files",
+        "description": "List files and directories in a specific path within the project sandbox.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "directory_path": {
+                    "type": "string",
+                    "description": "The relative path to the directory to list (e.g., '.', 'src/', or 'docs/')."
+                }
+            },
+            "required": ["directory_path"]
+        }
+    },
+    {
+        "name": "read_file_content",
+        "description": "Read the text content of a specific file within the project sandbox.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "The relative path to the file to read (e.g., 'README.md' or 'src/main.py')."
+                }
+            },
+            "required": ["file_path"]
+        }
+    }
+]
