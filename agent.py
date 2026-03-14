@@ -15,13 +15,13 @@ global LLM_TEMPERATURE
 global LLM_TOOLS
 
 chat_history = []
+tool_calls_log = [] 
 
 # get prompt from command line
 def get_user_input():
-    prompt = sys.argv[1]
-    if not len(sys.argv):
+    if len(sys.argv) < 2:
         raise Exception("No user input")
-    return prompt
+    return sys.argv[1]
 
 # load environment variables
 def get_env():
@@ -73,7 +73,7 @@ def send_request():
             "model": LLM_MODEL,
             "messages": chat_history,
             "tools": LLM_TOOLS,
-            "max_tokens": 512,
+            "max_tokens": 128,
             "temperature": float(LLM_TEMPERATURE),
         },
     )
@@ -82,35 +82,46 @@ def send_request():
         raise Exception(f"LLM API error: {response.status_code}, response: {response.json()}")
 
     chat_history.append({
-        "role": "assistant", 
+        "role": "assistant",
         "content": response.json()['content']
     })
 
     return response.json()
 
 # run the agentic loop
-def agentic_loop(prompt : str):
+def agentic_loop(prompt: str):
+    global tool_calls_log
+    
     chat_history.append({"role": "user", "content": prompt})
+    final_answer = None
+    
     while True:
         try:
             response = send_request()
-            
+
             blocks = response['content']
             tool_results = []
             has_tools = False
 
             for block in blocks:
                 if block['type'] == 'text':
-                    print(f"{Fore.GREEN}{Style.BRIGHT}Assistant:\n{Style.RESET_ALL}{Fore.GREEN}{block['text']}{Style.RESET_ALL}\n")
-                
+                    print(f"{Fore.GREEN}{Style.BRIGHT}Assistant:\n{Style.RESET_ALL}{Fore.GREEN}{block['text']}{Style.RESET_ALL}\n", file=sys.stderr)
+                    final_answer = block['text']
+
                 elif block['type'] == 'tool_use':
                     has_tools = True
-                    print(f"{Fore.YELLOW}{Style.BRIGHT}Executing tool: {block['name']}{Style.RESET_ALL}")
-                    
+                    print(f"{Fore.YELLOW}{Style.BRIGHT}Executing tool: {block['name']}{Style.RESET_ALL}", file=sys.stderr)
+
                     result_data = globals()[block['name']](block['input'])
                     result_str = result_data.stdout if hasattr(result_data, 'stdout') else str(result_data)
-                    
-                    print(f"{Fore.BLUE}Tool output: {result_str}{Style.RESET_ALL}\n")
+
+                    print(f"{Fore.BLUE}Tool output: {result_str}{Style.RESET_ALL}\n", file=sys.stderr)
+
+                    tool_calls_log.append({
+                        "tool": block['name'],
+                        "args": block['input'],
+                        "result": result_str
+                    })
 
                     tool_results.append({
                         "type": "tool_result",
@@ -127,31 +138,40 @@ def agentic_loop(prompt : str):
                 break
 
         except Exception as e:
-            print(f"Error: {e}")
-            print(traceback.format_exc())
+            print(f"Error: {e}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
             exit(1)
+    
+    return final_answer
 
 if __name__ == "__main__":
     try:
         get_env()
         parse_tools()
         prompt = get_user_input()
-        agentic_loop(prompt)
+        final_answer = agentic_loop(prompt)
+        
+        output = {
+            "answer": final_answer,
+            "tool_calls": tool_calls_log
+        }
+        print(json.dumps(output))
+        
         exit(0)
 
     except requests.exceptions.ConnectionError as e:
-        print(f"Network error occurred: {e}")
-    
+        print(f"Network error occurred: {e}", file=sys.stderr)
+
     except requests.exceptions.Timeout as e:
-        print(f"The request timed out: {e}")
+        print(f"The request timed out: {e}", file=sys.stderr)
 
     except requests.exceptions.HTTPError as e:
-        print(f"The API returned an error: {e}")
+        print(f"The API returned an error: {e}", file=sys.stderr)
 
     except requests.exceptions.RequestException as e:
-        print(f"An ambiguous error occurred: {e}")
+        print(f"An ambiguous error occurred: {e}", file=sys.stderr)
 
     except Exception as e:
-        print(f"Error: {e}")
-        print(traceback.format_exc())
+        print(f"Error: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
         exit(1)
