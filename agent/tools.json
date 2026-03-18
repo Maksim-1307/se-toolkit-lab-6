@@ -32,5 +32,30 @@
                 "required": ["file_path"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_api",
+            "description": "Query the deployed backend API to get live data or test endpoints. Use this for questions about item counts, HTTP status codes, analytics data, or to reproduce API errors. Returns status_code and response body.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "type": "string",
+                        "description": "HTTP method (GET, POST, PUT, DELETE, etc.)"
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "API endpoint path (e.g., '/items/', '/analytics/completion-rate')"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "JSON request body for POST/PUT requests (optional)"
+                    }
+                },
+                "required": ["method", "path"]
+            }
+        }
     }
 ]

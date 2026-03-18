@@ -13,18 +13,26 @@ global LLM_API_BASE
 global LLM_MODEL
 global LLM_TEMPERATURE
 global LLM_TOOLS
+global LMS_API_KEY
+global AGENT_API_BASE_URL
 
 chat_history = []
 tool_calls_log = []
-system_prompt = """You are a helpful documentation assistant. You have access to tools to read files and list directories in the project wiki.
+system_prompt = """You are a helpful documentation assistant. You have access to tools to read files, list directories, and query the live backend API.
 
 When answering questions:
-1. Use list_files to discover what files exist in the wiki directory
-2. Use read_file_content to read relevant files and find the answer
-3. Include the source reference in your answer (format: wiki/filename.md#section-anchor)
-4. Be concise and accurate
+1. For wiki/documentation questions: Use list_files to discover files in wiki/, then read_file_content to find answers
+2. For source code questions: Use read_file_content to read the relevant source files
+3. For live data questions (item counts, status codes, analytics): Use query_api to query the running backend
+4. For bug diagnosis: First use query_api to reproduce the error, then read_file_content to find the buggy code
 
-Always use tools to find answers - do not rely on your pre-trained knowledge.""" 
+Always use tools to find answers - do not rely on your pre-trained knowledge.
+
+Tool selection guide:
+- "According to the wiki..." or "What does the wiki say..." → Use read_file_content on wiki/ files
+- "What framework does the backend use?" or "Read the source code" → Use read_file_content on backend/ files
+- "How many items..." or "Query the API" or "What status code..." → Use query_api
+- "List all API routers" → Use list_files on backend/api/"""
 
 # get prompt from command line
 def get_user_input():
@@ -36,16 +44,27 @@ def get_user_input():
 def get_env():
 
     dotenv.load_dotenv(".env.agent.secret")
+    dotenv.load_dotenv(".env.docker.secret")
 
     global LLM_API_KEY
     global LLM_API_BASE
     global LLM_MODEL
     global LLM_TEMPERATURE
+    global LMS_API_KEY
+    global AGENT_API_BASE_URL
 
     LLM_API_KEY = os.getenv("LLM_API_KEY")
     LLM_API_BASE = os.getenv("LLM_API_BASE")
     LLM_MODEL = os.getenv("LLM_MODEL")
     LLM_TEMPERATURE = os.getenv("LLM_TEMPERATURE")
+    
+    # Backend API authentication and URL
+    LMS_API_KEY = os.getenv("LMS_API_KEY")
+    AGENT_API_BASE_URL = os.getenv("AGENT_API_BASE_URL", "http://localhost:42002")
+    
+    # Export for tools.py to access
+    os.environ["LMS_API_KEY"] = LMS_API_KEY or ""
+    os.environ["AGENT_API_BASE_URL"] = AGENT_API_BASE_URL
 
     if not LLM_API_KEY:
         raise Exception("LLM_API_KEY is not set")
